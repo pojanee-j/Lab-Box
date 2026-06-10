@@ -1,12 +1,24 @@
 import { initializeApp, getApp, getApps } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
 import { getFirestore, doc, setDoc, getDoc, getDocs, collection, query, where, orderBy, limit, serverTimestamp, Timestamp, getDocFromServer } from 'firebase/firestore';
-import firebaseConfig from '../../firebase-applet-config.json';
+import firebaseConfigFile from '../../firebase-applet-config.json';
 import { GameSession, LeaderboardUser, UserProfile } from '../types';
 
+// Prefer Vite environment variables when set; fall back to the config file (which holds only placeholders in the repo)
+const firebaseConfig = {
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY || firebaseConfigFile.apiKey,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfigFile.authDomain,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfigFile.projectId,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfigFile.storageBucket,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfigFile.messagingSenderId,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfigFile.appId,
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID || firebaseConfigFile.firestoreDatabaseId,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || firebaseConfigFile.measurementId,
+};
+
 // Check if Config is real or placeholder
-export const isMock = !firebaseConfig.projectId || 
-  firebaseConfig.projectId.includes('PLACEHOLDER') || 
+export const isMock = !firebaseConfig.projectId ||
+  firebaseConfig.projectId.includes('PLACEHOLDER') ||
   firebaseConfig.apiKey.includes('PLACEHOLDER');
 
 let firebaseApp: any = null;
