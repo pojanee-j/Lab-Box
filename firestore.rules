@@ -1,0 +1,91 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // 1. Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Universal authentication and structural validators
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // Check key strings prevent Denial of Wallet ID injections
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Users Collection Validations
+    function isValidUser(data) {
+      return 'displayName' in data && 'email' in data && 'createdAt' in data && 'lastLoginAt' in data
+        && data.size() == 4
+        && data.displayName is string && data.displayName.size() > 0 && data.displayName.size() <= 100
+        && data.email is string && data.email.size() > 0 && data.email.size() <= 200
+        && data.createdAt is timestamp
+        && data.lastLoginAt is timestamp;
+    }
+
+    match /users/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && userId == request.auth.uid;
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().createdAt == request.time;
+      allow update: if isOwner(userId) && isValidId(userId) && isValidUser(incoming()) && incoming().createdAt == existing().createdAt && incoming().lastLoginAt == request.time;
+    }
+
+    // Game Sessions Validations
+    function isValidGameSession(data) {
+      return 'uid' in data && 'displayName' in data && 'difficulty' in data && 'totalScore' in data && 'maxScore' in data && 'percentage' in data && 'topicStats' in data && 'startedAt' in data && 'completedAt' in data && 'answers' in data
+        && data.size() == 10
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 100
+        && (data.difficulty == 'easy' || data.difficulty == 'medium' || data.difficulty == 'hard')
+        && data.totalScore is int
+        && data.maxScore is int
+        && (data.percentage is int || data.percentage is float)
+        && data.topicStats is map
+        && data.startedAt is timestamp
+        && data.completedAt is timestamp
+        && data.answers is list
+        && data.answers.size() <= 50;
+    }
+
+    match /gameSessions/{sessionId} {
+      allow get: if isSignedIn() && existing().uid == request.auth.uid;
+      allow list: if isSignedIn() && resource.data.uid == request.auth.uid;
+      allow create: if isSignedIn() && isValidId(sessionId) && isValidGameSession(incoming()) && incoming().completedAt == request.time;
+      allow update, delete: if false; // Sessions are immutable
+    }
+
+    // Leaderboard Aggregates Validations
+    function isValidLeaderboard(data) {
+      return 'uid' in data && 'displayName' in data && 'highestScore' in data && 'totalGames' in data && 'lastPlayedAt' in data
+        && data.size() == 5
+        && data.uid == request.auth.uid
+        && data.displayName is string && data.displayName.size() <= 100
+        && data.highestScore is int
+        && data.totalGames is int
+        && data.lastPlayedAt is timestamp;
+    }
+
+    match /leaderboard/{userId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn(); // Let any student see high-score lists
+      allow create: if isOwner(userId) && isValidId(userId) && isValidLeaderboard(incoming()) && incoming().lastPlayedAt == request.time;
+      allow update: if isOwner(userId) && isValidId(userId) && isValidLeaderboard(incoming()) && incoming().lastPlayedAt == request.time;
+    }
+  }
+}

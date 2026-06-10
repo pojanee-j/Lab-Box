@@ -1,0 +1,6 @@
+{
+  "name": "Programming Logic Game",
+  "description": "An interactive, gamified logic and programming training game for computer science and IT students, complete with user logins, coding tasks, score tracking, and real-time leadership boards.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

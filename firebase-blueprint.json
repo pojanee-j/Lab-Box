@@ -1,0 +1,61 @@
+{
+  "entities": {
+    "User": {
+      "title": "User Profile",
+      "description": "User profile document containing display details.",
+      "type": "object",
+      "properties": {
+        "displayName": { "type": "string", "description": "The user's display name" },
+        "email": { "type": "string", "format": "email", "description": "The user's email address" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "ISO timestamp or server timestamp when the account was registered" },
+        "lastLoginAt": { "type": "string", "format": "date-time", "description": "ISO timestamp or server timestamp during the last authenticated login" }
+      },
+      "required": ["displayName", "email", "createdAt", "lastLoginAt"]
+    },
+    "GameSession": {
+      "title": "Game Session",
+      "description": "Information about a completed trivia session.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Foreign key to users collection document" },
+        "displayName": { "type": "string", "description": "Name at the time of play" },
+        "difficulty": { "type": "string", "enum": ["easy", "medium", "hard"], "description": "The tier of difficulty selected" },
+        "totalScore": { "type": "number", "description": "Determined accumulative points scored" },
+        "maxScore": { "type": "number", "description": "Potential maximum score" },
+        "percentage": { "type": "number", "description": "The success rate percentage" },
+        "topicStats": { "type": "object", "description": "Breakdown of scores aggregated by learning topic" },
+        "startedAt": { "type": "string", "format": "date-time", "description": "When session commenced" },
+        "completedAt": { "type": "string", "format": "date-time", "description": "When session finalized" },
+        "answers": { "type": "array", "description": "Detailed log of user actions on each question" }
+      },
+      "required": ["uid", "displayName", "difficulty", "totalScore", "maxScore", "percentage", "topicStats", "startedAt", "completedAt", "answers"]
+    },
+    "Leaderboard": {
+      "title": "Leaderboard Record",
+      "description": "Public records of outstanding user achievements for aggregate scoreboard display.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique user credentials identifier" },
+        "displayName": { "type": "string", "description": "Name showing on leaderboard" },
+        "highestScore": { "type": "number", "description": "Record score accomplished across sessions" },
+        "totalGames": { "type": "number", "description": "Number of games completed that contributed to leaderboard" },
+        "lastPlayedAt": { "type": "string", "format": "date-time", "description": "Timestamp of the last game session" }
+      },
+      "required": ["uid", "displayName", "highestScore", "totalGames", "lastPlayedAt"]
+    }
+  },
+  "firestore": {
+    "users/{userId}": {
+      "schema": "User",
+      "description": "User profiles indexed by their Auth UID."
+    },
+    "gameSessions/{sessionId}": {
+      "schema": "GameSession",
+      "description": "Logged historic sessions played by authenticated users."
+    },
+    "leaderboard/{userId}": {
+      "schema": "Leaderboard",
+      "description": "Rank records indexed by UID to track progress and ranks."
+    }
+  }
+}
